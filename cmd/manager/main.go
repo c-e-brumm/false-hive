@@ -61,12 +61,6 @@ func main() {
 
 	printVersion()
 
-	// //namespace, err := k8sutil.GetWatchNamespace()
-	// if err != nil {
-	// 	log.Error(err, "Failed to get watch namespace")
-	// 	os.Exit(1)
-	// }
-
 	// Get a config to talk to the apiserver
 	cfg, err := config.GetConfig()
 	if err != nil {
