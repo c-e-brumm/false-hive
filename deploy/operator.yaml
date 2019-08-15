@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: false-hive
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: false-hive
+  template:
+    metadata:
+      labels:
+        name: false-hive
+    spec:
+      serviceAccountName: false-hive
+      containers:
+        - name: false-hive
+          # Replace this with the built image name
+          image: REPLACE_IMAGE
+          command:
+          - false-hive
+          imagePullPolicy: Always
+          env:
+            - name: WATCH_NAMESPACE
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.namespace
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: OPERATOR_NAME
+              value: "false-hive"
