@@ -11,4 +11,4 @@ kubectl create -f deploy/role_binding.yaml
 ```
 
 ### It won't build
-I originaly wrote this as if it was in the openshift org, not my personal repo. You should clone the repo into the $GOPATH/src/github.com/openshift/false-hive
+I originally wrote this as if it was in the openshift org, not my personal repo. You should clone the repo into the  $GOPATH/src/github.com/openshift/false-hive
