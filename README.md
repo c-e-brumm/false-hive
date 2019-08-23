@@ -10,5 +10,5 @@ kubectl create -f deploy/role.yaml
 kubectl create -f deploy/role_binding.yaml
 ```
 
-### It won't build
-I originally wrote this as if it was in the openshift org, not my personal repo. You should clone the repo into the  $GOPATH/src/github.com/openshift/false-hive
+### How do you run this?
+Honestly since this is new and I haven't done much yet I've just used 'operator-sdk up local' from within the directory.

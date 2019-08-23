@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"github.com/openshift/false-hive/pkg/controller/clusterdeployment"
+	"github.com/c-e-brumm/false-hive/pkg/controller/clusterdeployment"
 )
 
 func init() {

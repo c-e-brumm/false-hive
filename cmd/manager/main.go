@@ -10,8 +10,8 @@ import (
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 
-	"github.com/openshift/false-hive/pkg/apis"
-	"github.com/openshift/false-hive/pkg/controller"
+	"github.com/c-e-brumm/false-hive/pkg/apis"
+	"github.com/c-e-brumm/false-hive/pkg/controller"
 	hivev1alpha1 "github.com/openshift/hive/pkg/apis/hive/v1alpha1"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
 	"github.com/operator-framework/operator-sdk/pkg/log/zap"
