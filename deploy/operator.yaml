@@ -16,7 +16,7 @@ spec:
       containers:
         - name: false-hive
           # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: quay.io/openshift-sre/false-hive:latest
           command:
           - false-hive
           imagePullPolicy: Always

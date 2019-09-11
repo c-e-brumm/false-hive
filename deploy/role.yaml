@@ -1,49 +1,8 @@
-kind: Role
+kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: false-hive
 rules:
-- apiGroups:
-  - ""
-  resources:
-  - pods
-  - services
-  - endpoints
-  - persistentvolumeclaims
-  - events
-  - configmaps
-  - secrets
-  verbs:
-  - '*'
-- apiGroups:
-  - ""
-  resources:
-  - namespaces
-  verbs:
-  - get
-- apiGroups:
-  - apps
-  resources:
-  - deployments
-  - daemonsets
-  - replicasets
-  - statefulsets
-  verbs:
-  - '*'
-- apiGroups:
-  - monitoring.coreos.com
-  resources:
-  - servicemonitors
-  verbs:
-  - get
-  - create
-- apiGroups:
-  - certman.managed.openshift.io
-  resources:
-  - '*'
-  - certificaterequests
-  verbs:
-  - '*'
 - apiGroups:
   - hive.openshift.io
   attributeRestrictions: null
@@ -57,11 +16,3 @@ rules:
   - watch
   - update
   - patch
-- apiGroups:
-  - route.openshift.io
-  resources:
-  - routes
-  verbs:
-  - '*'
-
-

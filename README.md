@@ -11,4 +11,18 @@ kubectl create -f deploy/role_binding.yaml
 ```
 
 ### How do you run this?
-Honestly since this is new and I haven't done much yet I've just used 'operator-sdk up local' from within the directory.
+Use 'operator-sdk up local' from within this operator's directory.
+
+Alternatively, use it as part of your minikube cluster:
+```
+minikube start
+kubectl config use-context minikube
+cd $GOPATH/src/github.com/c-e-brumm/false-hive
+oc create -f ./deploy
+```
+
+### Building the latest image
+```
+docker build -f build/Dockerfile . -t quay.io/openshift-sre/false-hive:latest
+docker push quay.io/openshift-sre/false-hive:latest
+```
