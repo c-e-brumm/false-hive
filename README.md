@@ -18,7 +18,7 @@ Alternatively, use it as part of your minikube cluster:
 minikube start
 kubectl config use-context minikube
 cd $GOPATH/src/github.com/c-e-brumm/false-hive
-oc create -f ./deploy
+kubectl create -f ./deploy
 ```
 
 ### Building the latest image
