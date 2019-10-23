@@ -87,13 +87,28 @@ func (r *ReconcileClusterDeployment) Reconcile(request reconcile.Request) (recon
 		// Error reading the object - requeue the request.
 		return reconcile.Result{}, err
 	}
-	cd.Status.Installed = true
-	err = r.client.Status().Update(context.TODO(), cd)
-	if err != nil {
-		reqLogger.Error(err, err.Error())
-		return reconcile.Result{}, err
 
+	if !cd.Spec.Installed {
+		cd.Spec.Installed = true
+		err = r.client.Update(context.TODO(), cd)
+		if err != nil {
+			reqLogger.Error(err, err.Error())
+			return reconcile.Result{}, err
+		}
+		reqLogger.Info("updating spec")
+
+		return reconcile.Result{}, nil
 	}
-	reqLogger.Info("updating status")
+	if !cd.Status.Installed {
+		cd.Status.Installed = true
+
+		err = r.client.Status().Update(context.TODO(), cd)
+		if err != nil {
+			reqLogger.Error(err, err.Error())
+			return reconcile.Result{}, err
+		}
+		reqLogger.Info("updating status")
+		return reconcile.Result{}, nil
+	}
 	return reconcile.Result{}, nil
 }

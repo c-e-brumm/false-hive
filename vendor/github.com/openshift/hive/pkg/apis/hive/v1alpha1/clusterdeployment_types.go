@@ -1,13 +1,12 @@
 package v1alpha1
 
 import (
-	"net"
-
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 
 	openshiftapiv1 "github.com/openshift/api/config/v1"
 	netopv1 "github.com/openshift/cluster-network-operator/pkg/apis/networkoperator/v1"
+	"github.com/openshift/hive/pkg/apis/hive/v1alpha1/aws"
 )
 
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
@@ -45,7 +44,8 @@ type ClusterDeploymentSpec struct {
 	ClusterName string `json:"clusterName"`
 
 	// SSHKey is the reference to the secret that contains a public key to use for access to compute instances.
-	SSHKey *corev1.LocalObjectReference `json:"sshKey,omitempty"`
+	// +required
+	SSHKey corev1.LocalObjectReference `json:"sshKey"`
 
 	// BaseDomain is the base domain to which the cluster should belong.
 	// +required
@@ -102,6 +102,9 @@ type ClusterDeploymentSpec struct {
 	// for this ClusterDeployment
 	// +optional
 	ManageDNS bool `json:"manageDNS,omitempty"`
+
+	// Installed is true if the cluster has been installed
+	Installed bool `json:"installed"`
 }
 
 // ProvisionImages allows overriding the default images used to provision a cluster.
@@ -110,10 +113,6 @@ type ProvisionImages struct {
 	InstallerImage string `json:"installerImage,omitempty"`
 	// InstallerImagePullPolicy is the pull policy for the installer image.
 	InstallerImagePullPolicy corev1.PullPolicy `json:"installerImagePullPolicy,omitempty"`
-	// HiveImage is the image used in the sidecar container to manage execution of openshift-install.
-	HiveImage string `json:"hiveImage,omitempty"`
-	// HiveImagePullPolicy is the pull policy for the installer image.
-	HiveImagePullPolicy corev1.PullPolicy `json:"hiveImagePullPolicy,omitempty"`
 
 	// ReleaseImage is the image containing metadata for all components that run in the cluster, and
 	// is the primary and best way to specify what specific version of OpenShift you wish to install.
@@ -129,18 +128,7 @@ type ClusterImageSetReference struct {
 // PlatformSecrets defines the secrets to be used by various clouds.
 type PlatformSecrets struct {
 	// +optional
-	AWS *AWSPlatformSecrets `json:"aws,omitempty"`
-}
-
-// AWSPlatformSecrets contains secrets for clusters on the AWS platform.
-type AWSPlatformSecrets struct {
-	// SSH refers to a secret that contains the ssh private key to access
-	// EC2 instances in this cluster.
-	//SSH corev1.LocalObjectReference `json:"ssh"`
-
-	// Credentials refers to a secret that contains the AWS account access
-	// credentials.
-	Credentials corev1.LocalObjectReference `json:"credentials"`
+	AWS *aws.PlatformSecrets `json:"aws,omitempty"`
 }
 
 // ClusterDeploymentStatus defines the observed state of ClusterDeployment
@@ -153,6 +141,7 @@ type ClusterDeploymentStatus struct {
 	InfraID string `json:"infraID,omitempty"`
 
 	// Installed is true if the installer job has successfully completed for this cluster.
+	// Deprecated.
 	Installed bool `json:"installed"`
 
 	// Federated is true if the cluster deployment has been federated with the host cluster.
@@ -180,14 +169,6 @@ type ClusterDeploymentStatus struct {
 	// WebConsoleURL is the URL for the cluster's web console UI.
 	WebConsoleURL string `json:"webConsoleURL,omitempty"`
 
-	// SyncSetStatus is the list of status for SyncSets which apply to the cluster deployment.
-	// +optional
-	SyncSetStatus []SyncSetObjectStatus `json:"syncSetStatus,omitempty"`
-
-	// SelectorSyncSetStatus is the list of status for SelectorSyncSets which apply to the cluster deployment.
-	// +optional
-	SelectorSyncSetStatus []SyncSetObjectStatus `json:"selectorSyncSetStatus,omitempty"`
-
 	// InstallerImage is the name of the installer image to use when installing the target cluster
 	// +optional
 	InstallerImage *string `json:"installerImage,omitempty"`
@@ -206,6 +187,10 @@ type ClusterDeploymentStatus struct {
 
 	// InstalledTimestamp is the time we first detected that the cluster has been successfully installed.
 	InstalledTimestamp *metav1.Time `json:"installedTimestamp,omitempty"`
+
+	// Provision is a reference to the last ClusterProvision created for the deployment
+	// +optional
+	Provision *corev1.LocalObjectReference `json:"provision,omitempty"`
 }
 
 // ClusterDeploymentCondition contains details for the current condition of a cluster deployment
@@ -259,6 +244,9 @@ const (
 	// DNSNotReadyCondition indicates that the the DNSZone object created for the clusterDeployment
 	// (ie managedDNS==true) has not yet indicated that the DNS zone is successfully responding to queries.
 	DNSNotReadyCondition ClusterDeploymentConditionType = "DNSNotReady"
+
+	// ProvisionFailedCondition indicates that a provision failed
+	ProvisionFailedCondition ClusterDeploymentConditionType = "ProvisionFailed"
 )
 
 // AllClusterDeploymentConditions is a slice containing all condition types. This can be used for dealing with
@@ -271,6 +259,7 @@ var AllClusterDeploymentConditions = []ClusterDeploymentConditionType{
 	UnreachableCondition,
 	InstallFailingCondition,
 	DNSNotReadyCondition,
+	ProvisionFailedCondition,
 }
 
 // +genclient
@@ -282,7 +271,7 @@ var AllClusterDeploymentConditions = []ClusterDeploymentConditionType{
 // +kubebuilder:printcolumn:name="ClusterName",type="string",JSONPath=".spec.clusterName"
 // +kubebuilder:printcolumn:name="ClusterType",type="string",JSONPath=".metadata.labels.hive\.openshift\.io/cluster-type"
 // +kubebuilder:printcolumn:name="BaseDomain",type="string",JSONPath=".spec.baseDomain"
-// +kubebuilder:printcolumn:name="Installed",type="boolean",JSONPath=".status.installed"
+// +kubebuilder:printcolumn:name="Installed",type="boolean",JSONPath=".spec.installed"
 // +kubebuilder:printcolumn:name="InfraID",type="string",JSONPath=".status.infraID"
 // +kubebuilder:printcolumn:name="Age",type="date",JSONPath=".metadata.creationTimestamp"
 // +kubebuilder:resource:path=clusterdeployments,shortName=cd
@@ -307,9 +296,7 @@ type ClusterDeploymentList struct {
 // the installation. Only one of the platform configuration should be set.
 type Platform struct {
 	// AWS is the configuration used when installing on AWS.
-	AWS *AWSPlatform `json:"aws,omitempty"`
-	// Libvirt is the configuration used when installing on libvirt.
-	Libvirt *LibvirtPlatform `json:"libvirt,omitempty"`
+	AWS *aws.Platform `json:"aws,omitempty"`
 }
 
 // Networking defines the pod network provider in the cluster.
@@ -336,51 +323,6 @@ const (
 	// NetworkTypeOpenshiftOVN is used to install with OVN.
 	NetworkTypeOpenshiftOVN NetworkType = "OVNKubernetes"
 )
-
-// AWSPlatform stores all the global configuration that
-// all machinesets use.
-type AWSPlatform struct {
-	// Region specifies the AWS region where the cluster will be created.
-	Region string `json:"region"`
-
-	// UserTags specifies additional tags for AWS resources created for the cluster.
-	UserTags map[string]string `json:"userTags,omitempty"`
-
-	// DefaultMachinePlatform is the default configuration used when
-	// installing on AWS for machine pools which do not define their own
-	// platform configuration.
-	DefaultMachinePlatform *AWSMachinePoolPlatform `json:"defaultMachinePlatform,omitempty"`
-}
-
-// LibvirtPlatform stores all the global configuration that
-// all machinesets use.
-type LibvirtPlatform struct {
-	// URI is the identifier for the libvirtd connection.  It must be
-	// reachable from both the host (where the installer is run) and the
-	// cluster (where the cluster-API controller pod will be running).
-	URI string `json:"URI"`
-
-	// DefaultMachinePlatform is the default configuration used when
-	// installing on AWS for machine pools which do not define their own
-	// platform configuration.
-	DefaultMachinePlatform *LibvirtMachinePoolPlatform `json:"defaultMachinePlatform,omitempty"`
-
-	// Network
-	Network LibvirtNetwork `json:"network"`
-
-	// MasterIPs
-	MasterIPs []net.IP `json:"masterIPs"`
-}
-
-// LibvirtNetwork is the configuration of the libvirt network.
-type LibvirtNetwork struct {
-	// Name is the name of the nework.
-	Name string `json:"name"`
-	// IfName is the name of the network interface.
-	IfName string `json:"if"`
-	// IPRange is the range of IPs to use.
-	IPRange string `json:"ipRange"`
-}
 
 // ClusterIngress contains the configurable pieces for any ClusterIngress objects
 // that should exist on the cluster.
