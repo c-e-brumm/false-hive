@@ -16,3 +16,16 @@ rules:
   - watch
   - update
   - patch
+- apiGroups:
+  - ""
+  resources:
+  - configmaps
+  verbs:
+  - get
+  - create
+- apiGroups:
+  - ""
+  resources:
+  - pods
+  verbs:
+  - get
