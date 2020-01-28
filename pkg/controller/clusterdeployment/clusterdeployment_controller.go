@@ -3,7 +3,7 @@ package clusterdeployment
 import (
 	"context"
 
-	hivev1alpha1 "github.com/openshift/hive/pkg/apis/hive/v1alpha1"
+	hivev1alpha1 "github.com/openshift/hive/pkg/apis/hive/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -99,16 +99,6 @@ func (r *ReconcileClusterDeployment) Reconcile(request reconcile.Request) (recon
 
 		return reconcile.Result{}, nil
 	}
-	if !cd.Status.Installed {
-		cd.Status.Installed = true
 
-		err = r.client.Status().Update(context.TODO(), cd)
-		if err != nil {
-			reqLogger.Error(err, err.Error())
-			return reconcile.Result{}, err
-		}
-		reqLogger.Info("updating status")
-		return reconcile.Result{}, nil
-	}
 	return reconcile.Result{}, nil
 }

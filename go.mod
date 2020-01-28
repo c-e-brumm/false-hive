@@ -23,7 +23,7 @@ require (
 	github.com/ianlancetaylor/demangle v0.0.0-20181102032728-5e5cf60278f6 // indirect
 	github.com/imdario/mergo v0.3.6 // indirect
 	github.com/openshift/api v3.9.0+incompatible // indirect
-	github.com/openshift/hive v0.0.0-20190912123708-7776e82850f8
+	github.com/openshift/hive v0.0.0-20200120123708-846c8ad71dad
 	github.com/operator-framework/operator-sdk v0.8.3-0.20190722210327-daf62d44e47e
 	github.com/peterbourgon/diskv v2.0.1+incompatible // indirect
 	github.com/spf13/pflag v1.0.3
